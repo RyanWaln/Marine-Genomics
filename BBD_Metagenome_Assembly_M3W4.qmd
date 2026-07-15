@@ -67,4 +67,40 @@ cat checkm_results_bbd.txt | awk '$13>15{print $1}'
 cat checkm_results_bbd.txt | awk '$13>15{print $1}' > bbd_topbins.txt
 
 ## Perform taxonomic classification with gtdbtk
-### Create a gtdbtk directory in the top level 
+### Create a gtdbtk directory in the top level and then create a subfolder in the new directory called genomes 
+### Copy each of the top bins identified earlier into the genomes folder as input for slurm to taxonomically classify each
+
+while read bin;do echo $bin;done < ../checkm/bbd_topbins.txt
+while read bin;do echo "../metabat/bins_bbd/${bin}.fa";done < ../checkm/bbd_topbins.txt
+while read bin;do cp "../metabat/bins_bbd/${bin}.fa" genomes;done < ../checkm/bbd_topbins.txt
+
+### Create A shell script named run_gtdbtk.sh in the gtdbtk directory w/provided code then submit the job to slurm
+sbatch run_gtdbtk.sh
+tail -f slurm-568.out
+
+## Find and annotate genes with prokka
+
+### The ultimate goal is to use the BBD metagenome to improve our understanding of metabolic processes within the mat.
+### Thus we must identify the genes present within the genomes of bbd taxa.
+### Prokka is a great program to identify gene sequences and identify homologous genes with known functions. 
+### General idea it that if two genes share a common ancestor (ie are homologous) their functions are likely to be similar. 
+
+###  Move to top level directory and make a prokka diectory and then find out the first bin ID in your lis
+head -n 1 ../checkm/bbd_topbins.txt
+
+### Run this bin ID as a test before submiting all bins to to slurm and display results to ensure there are no errors
+bin=metabat.5
+prokka --outdir $bin --prefix $bin  ../metabat/bins_bbd/${bin}.fa
+ls metabat.5
+
+### Create A shell script named run_prokka.sh in the prokka directory w/provided code then submit the job to slurm
+sbatch run_prokka.sh
+tail -f slurm-576.out
+
+## Infer metabolic pathways
+### Will use minpath to take functional info for individual genes and use this to infer the presence of broader biological pathways. 
+### Will run this on each of the genomes (bins), minpath will then look at all of the annotated genes in our data and infer the minimal set of biological pathways that can explain the presence of all these genes
+
+### Move to top level directory and make a minpath diectory 
+### Inputs for minpath will be prepared for each bin based on the prokka .tsv file. Start by looking at the .tsv file for a single bin
+head ../prokka/metabat.5/metabat.5.tsv
