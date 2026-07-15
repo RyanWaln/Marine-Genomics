@@ -102,5 +102,55 @@ tail -f slurm-576.out
 ### Will run this on each of the genomes (bins), minpath will then look at all of the annotated genes in our data and infer the minimal set of biological pathways that can explain the presence of all these genes
 
 ### Move to top level directory and make a minpath diectory 
-### Inputs for minpath will be prepared for each bin based on the prokka .tsv file. Start by looking at the .tsv file for a single bin
+### Inputs for minpath will be prepared for each bin based on the prokka .tsv file. Look at the .tsv file for a single bin (should show 9 genes)
 head ../prokka/metabat.5/metabat.5.tsv
+
+### Transform the tsv using awk so that only the unique ID for each gene (column 1) and its EC number (column 5) are kept 
+head ../prokka/metabat.5/metabat.5.tsv | awk -F '\t' '{print $1,$5}'
+
+### Ensure the output is tab separated and remove the header line
+head ../prokka/metabat.5/metabat.5.tsv | awk -F '\t' '$5{OFS="\t";print $1,$5}' | grep -v '^locus'
+
+### Change head to cat to include all genes
+cat ../prokka/metabat.5/metabat.5.tsv | awk -F '\t' '$5{OFS="\t";print $1,$5}' | grep -v '^locus'
+
+### Send above code to an output file so that it can be used as input to minpath
+cat ../prokka/metabat.5/metabat.5.tsv | awk -F '\t' '$5{OFS="\t";print $1,$5}' | grep -v '^locus' > metabat.5.ec
+
+### Run minpath on the file 
+minpath -ec metabat.5.ec -report metabat.5.ec.report -details metabat.5.ec.details
+
+### Look at the first few lines of output
+head metabat.5.ec.report 
+
+# RESUME HERE
+
+### Once Prokka is finished run the following code to prepare minpath inputs for all bins 
+while read bin;do 
+  cat ../prokka/$bin/${bin}.tsv | awk -F '\t' '$5{printf("%s\t%s\n", $1,$5)}' | grep -v '^locus' > ${bin}.ec 
+done < ../checkm/bbd_topbins.txt
+
+### Run minpath on every bin
+while read bin;do 
+  minpath -ec ${bin}.ec -report ${bin}.ec.report -details ${bin}.ec.details
+done < ../checkm/bbd_topbins.txt
+
+### Minpath should prodce a lot of output, but we are only intrested in 2 pathways 
+
+### The first pathway is named photosynthesis light reactions (metacyc code: PWY-101) 
+### This pathway includes the essential components of photosynthesis that occur in light, Photosystem I and Photosystem II
+
+### The second pathway is called superpathway of tetrathionate reduction (metacyc code: PWY-5360) 
+### This pathway is important because it includes enzymes required to reduce sulfite to hydrogen sulfide
+
+### Search for photosynthesis light reactions across all bins
+grep 'PWY-101' *.ec.report
+
+### Cross reference results with the output from gtdbtk to see the taxonomy of bins containing this pathway (modify to match correct bin number)
+grep 'metabat.26' ../gtdbtk/out/gtdbtk.bac120.summary.tsv
+
+### Search for superpathway of tetrathionate reduction across all bins
+grep 'PWY-5360' *.ec.report
+
+### Cross reference results with the output from gtdbtk to see the taxonomy of bins containing this pathway (modify to match correct bin number)
+grep 'metabat.26' ../gtdbtk/out/gtdbtk.bac120.summary.tsv
