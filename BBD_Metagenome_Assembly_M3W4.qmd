@@ -143,7 +143,7 @@ done < ../checkm/bbd_topbins.txt
 ### The second pathway is called superpathway of tetrathionate reduction (metacyc code: PWY-5360) 
 ### This pathway is important because it includes enzymes required to reduce sulfite to hydrogen sulfide
 
-### Search for photosynthesis light reactions across all bins
+### Search for photosynthesis light reactions across all bins in minpath directory
 grep 'PWY-101' *.ec.report
 
 ### List of bins with pathway:
@@ -155,7 +155,7 @@ metabat.51
 ### Cross reference results with the output from gtdbtk to see the taxonomy of bins containing this pathway 
 grep 'metabat.12' ../gtdbtk/out/gtdbtk.bac120.summary.tsv
 
-### Search for superpathway of tetrathionate reduction across all bins
+### Search for superpathway of tetrathionate reduction across all bins in minpath directory
 grep 'PWY-5360' *.ec.report
 
 ### List of bins with pathway:
@@ -170,6 +170,10 @@ library(tidyverse)
 Taxa_results <- read_tsv("gtdbtk/out/gtdbtk.bac120.summary.tsv")
 Taxa_results
 ```
+
+### To find the how many genes were identified by prokka run the below code in prokka directory:
+
+while read bin;do cat "$bin/$bin.tsv";done < ../checkm/bbd_topbins.txt|wc -l
 
 ### To find number of genes prokka assigned an ec number run below code in prokka directory:
 cat ../minpath/*.ec|wc -l
