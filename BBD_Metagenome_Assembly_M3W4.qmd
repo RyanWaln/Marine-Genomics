@@ -6,7 +6,7 @@ editor: visual
 ---
 ## Introduction
 
-This file serves as a set of notes on the commands used for workshop 3 for Module 3 in MB5370 in order to assemble a metagenome of five bacterial species
+This file serves as a set of notes on the commands used for workshop 4 for Module 3 in MB5370 in order to assemble a metagenome of BBD using a smaller subset of genomic data taken from a previous PhD project 
 
 The following steps are taken to assemble the metagenome:
 - Assembly
@@ -123,8 +123,6 @@ minpath -ec metabat.5.ec -report metabat.5.ec.report -details metabat.5.ec.detai
 ### Look at the first few lines of output
 head metabat.5.ec.report 
 
-# RESUME HERE
-
 ### Once Prokka is finished run the following code to prepare minpath inputs for all bins 
 while read bin;do 
   cat ../prokka/$bin/${bin}.tsv | awk -F '\t' '$5{printf("%s\t%s\n", $1,$5)}' | grep -v '^locus' > ${bin}.ec 
@@ -146,11 +144,27 @@ done < ../checkm/bbd_topbins.txt
 ### Search for photosynthesis light reactions across all bins
 grep 'PWY-101' *.ec.report
 
-### Cross reference results with the output from gtdbtk to see the taxonomy of bins containing this pathway (modify to match correct bin number)
-grep 'metabat.26' ../gtdbtk/out/gtdbtk.bac120.summary.tsv
+### List of bins with pathway:
+metabat.12
+metabat.34
+metabat.40 
+metabat.51
+
+### Cross reference results with the output from gtdbtk to see the taxonomy of bins containing this pathway 
+grep 'metabat.12' ../gtdbtk/out/gtdbtk.bac120.summary.tsv
 
 ### Search for superpathway of tetrathionate reduction across all bins
 grep 'PWY-5360' *.ec.report
 
-### Cross reference results with the output from gtdbtk to see the taxonomy of bins containing this pathway (modify to match correct bin number)
-grep 'metabat.26' ../gtdbtk/out/gtdbtk.bac120.summary.tsv
+### List of bins with pathway:
+metabat.70
+
+### Cross reference results with the output from gtdbtk to see the taxonomy of bins containing this pathway 
+grep 'metabat.70' ../gtdbtk/out/gtdbtk.bac120.summary.tsv
+
+### Read taxonomic results of bins with pathways
+```{r}
+library(tidyverse)
+photo_metabat <- read_tsv("gtdbtk/out/gtdbtk.bac120.summary.tsv")
+photo_metabat
+```
