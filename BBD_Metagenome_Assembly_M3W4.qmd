@@ -15,7 +15,7 @@ The following steps are taken to assemble the metagenome:
 - Selecting bins based on checkm results
 - Taxonomic classification with gtdbtk
 - Finding and annotating genes with prokka
-- Infering metabolic pathways
+- Inferring metabolic pathways
 
 ## Assembly 
 ### Create a directory called flye and make a symbolic link to bbd read data 
@@ -34,6 +34,10 @@ cat depths_bbd.txt | awk '{print $1}' | xargs samtools faidx ../flye/bbd/assembl
 
 ### Run metabat 
 metabat2 -i assembly_bbd_ordered.fasta -a depths_bbd.txt --cvExt -o bins_bbd/metabat --seed 5
+
+```bash
+metabat2 -i assembly_bbd_ordered.fasta -a depths_bbd.txt --cvExt -o bins_bbd/metabat --seed 5
+```
 
 ## Check bin quality
 ###  Move to top level directory and make a checkm diectory
@@ -165,6 +169,11 @@ grep 'metabat.70' ../gtdbtk/out/gtdbtk.bac120.summary.tsv
 ### Read taxonomic results of bins with pathways
 ```{r}
 library(tidyverse)
-photo_metabat <- read_tsv("gtdbtk/out/gtdbtk.bac120.summary.tsv")
-photo_metabat
+Taxa_results <- read_tsv("gtdbtk/out/gtdbtk.bac120.summary.tsv")
+Taxa_results
 ```
+
+
+find ./ -name '*sh' | xargs -I{} git add {}
+
+git add ./flye/run_flye_bbd.sh
