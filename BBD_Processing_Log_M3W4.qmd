@@ -1,0 +1,104 @@
+---
+title: "Processing Log M3W4"
+author: "Ryan Waln"
+format: html
+editor: visual
+---
+## Introduction
+
+This file serves as a processing log for the important commands used in workshop 4 for Module 3 in MB5370 in order to assemble a meta genome of BBD using a smaller subset of genomic data taken from a previous PhD project
+
+The following steps are taken to assemble the meta genome:
+- Assembly w/flye
+- Binning w/metabat
+- Bin quality check w/checkm
+- Selecting bins based on checkm results
+- Taxonomic classification with gtdbtk
+- Finding and annotating genes with prokka
+- Inferring metabolic pathways
+
+## Assembly with flye
+First we must assemble the meta genome of the BBD community
+
+```bash
+flye --nano-hq bbd_0.1.fastq.gz --threads 12 --out-dir bbd --meta
+```
+
+## Binning with metabat
+
+Reorder contigs based on depth 
+
+```bash
+metabat2 -i assembly_bbd_ordered.fasta -a depths_bbd.txt --cvExt -o bins_bbd/metabat --seed 5
+```
+
+## Check bin quality with checkm
+
+```bash
+shopt -s expand_aliases
+alias checkm='apptainer run -B /pvol/:/pvol /pvol/data/sif/checkm.sif checkm'
+
+checkm lineage_wf bins_bbd out -t 4 -x fa -f checkm_results_bbd.txt
+```
+
+## Select Bins based on checkm results with gtdbtk 
+
+Use awk to bring up bins with a completeness greater than 15% to look at best assembled members of BBD community
+Perform taxonomic classification with gtdbtk on these bins
+
+```bash
+shopt -s expand_aliases
+alias gtdbtk='apptainer run -B /pvol:/pvol,/pvol/data/mg/gtdbtkdata/release207_v2/:/refdata /pvol/data/sif/gtdbtk.sif'
+
+gtdbtk classify_wf -x fa --cpus 2 --genome_dir genomes --out_dir out --skip_ani_screen
+```
+
+## Find and annotate genes with prokka
+
+The ultimate goal is to use the BBD metagenome to improve our understanding of metabolic processes within the mat.
+Thus we must identify the genes present within the genomes of bbd taxa.
+Prokka is a great program to identify gene sequences and identify homologous genes with known functions. 
+General idea it that if two genes share a common ancestor (ie are homologous) their functions are likely to be similar. 
+
+```bash
+shopt -s expand_aliases
+alias prokka='apptainer run -B /pvol/:/pvol /pvol/data/sif/prokka.sif prokka'
+
+while read bin;do 
+  prokka --outdir $bin --prefix $bin "../metabat/bins_bbd/${bin}.fa";
+done < ../checkm/bbd_topbins.txt
+```
+
+## Infer metabolic pathways with minpath
+Will use minpath to take functional info for individual genes and use this to infer the presence of broader biological pathways. 
+Will run this on each of the genomes (bins), minpath will then look at all of the annotated genes in our data and infer the minimal set of biological pathways that can explain the presence of all these genes
+
+```bash
+while read bin;do 
+  minpath -ec ${bin}.ec -report ${bin}.ec.report -details ${bin}.ec.details
+done < ../checkm/bbd_topbins.txt
+```
+
+There are two paths of interest from the minpath output:
+
+The first pathway is named photosynthesis light reactions (metacyc code: PWY-101) 
+This pathway includes the essential components of photosynthesis that occur in light, Photosystem I and Photosystem II
+
+The second pathway is called superpathway of tetrathionate reduction (metacyc code: PWY-5360) 
+This pathway is important because it includes enzymes required to reduce sulfite to hydrogen sulfide
+
+We must search for both across all bins 
+
+```bash
+grep 'PWY-101' *.ec.report
+```
+
+```bash
+grep 'PWY-5360' *.ec.report
+```
+
+Finally we can cross reference results with the output from gtdbtk to see the taxonomy of bins containing this pathway 
+
+
+
+

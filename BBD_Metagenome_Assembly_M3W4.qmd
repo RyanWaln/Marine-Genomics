@@ -6,18 +6,20 @@ editor: visual
 ---
 ## Introduction
 
-This file serves as a set of notes on the commands used for workshop 4 for Module 3 in MB5370 in order to assemble a metagenome of BBD using a smaller subset of genomic data taken from a previous PhD project 
+This file serves as a full set of notes on the commands used for workshop 4 for Module 3 in MB5370 in order to assemble a meta genome of BBD using a smaller subset of genomic data taken from a previous PhD project 
 
-The following steps are taken to assemble the metagenome:
-- Assembly
+The following steps are taken to assemble the meta genome:
+- Assembly w/flye
 - Binning w/metabat
 - Bin quality check w/checkm
 - Selecting bins based on checkm results
-- Taxonomic classification with gtdbtk
-- Finding and annotating genes with prokka
-- Inferring metabolic pathways
+- Taxonomic classification w/gtdbtk
+- Finding and annotating genes w/prokka
+- Inferring metabolic pathways w/minpath
 
-## Assembly 
+(Notes have # headings, code is in normal text format. Processing log is better formatted from learning about non-functioning bash chunks)
+
+## Assembly with flye
 ### Create a directory called flye and make a symbolic link to bbd read data 
 ln -s /pvol/data/metagenome_assembly/bbd_0.1.fastq.gz .
 
@@ -25,7 +27,7 @@ ln -s /pvol/data/metagenome_assembly/bbd_0.1.fastq.gz .
 sbatch run_flye_bbd.sh
 tail -f slurm-494.out
 
-## Binning
+## Binning with metabat
 ### Move to top level directory and make a metabat diectory then extract depth information 
 cat ../flye/bbd/assembly_info.txt  | grep -v '#' | awk '{OFS="\t";print $1,$3}' > depths_bbd.txt
 
@@ -35,11 +37,7 @@ cat depths_bbd.txt | awk '{print $1}' | xargs samtools faidx ../flye/bbd/assembl
 ### Run metabat 
 metabat2 -i assembly_bbd_ordered.fasta -a depths_bbd.txt --cvExt -o bins_bbd/metabat --seed 5
 
-```bash
-metabat2 -i assembly_bbd_ordered.fasta -a depths_bbd.txt --cvExt -o bins_bbd/metabat --seed 5
-```
-
-## Check bin quality
+## Check bin quality with checkm
 ###  Move to top level directory and make a checkm diectory
 ### Display lengths of all contigs from shortest to longest
 cat ../flye/bbd/assembly.fasta | bioawk -c fastx '{print length($seq),$name}' | sort -n
@@ -58,7 +56,7 @@ tail -f slurm-529.out
 ### (what genes do they have and what biochemical pathways do these support?)
 
 
-## Select Bins based on checkm results 
+## Select Bins based on checkm results with gtdbtk 
 ### Go to checkm directory and look at results
 ### (markers are genes present once in the genome, marker sets, numbers represent count of genes found x times in genome)
 head -n 20 checkm_results_bbd.txt 
@@ -101,7 +99,7 @@ ls metabat.5
 sbatch run_prokka.sh
 tail -f slurm-576.out
 
-## Infer metabolic pathways
+## Infer metabolic pathways with minpath
 ### Will use minpath to take functional info for individual genes and use this to infer the presence of broader biological pathways. 
 ### Will run this on each of the genomes (bins), minpath will then look at all of the annotated genes in our data and infer the minimal set of biological pathways that can explain the presence of all these genes
 
@@ -173,7 +171,6 @@ Taxa_results <- read_tsv("gtdbtk/out/gtdbtk.bac120.summary.tsv")
 Taxa_results
 ```
 
+### To find number of genes prokka assigned an ec number run below code in prokka directory:
+cat ../minpath/*.ec|wc -l
 
-find ./ -name '*sh' | xargs -I{} git add {}
-
-git add ./flye/run_flye_bbd.sh
